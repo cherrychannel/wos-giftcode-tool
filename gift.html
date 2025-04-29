@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>ギフトコード配布ページ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
+    input, button { padding: 10px; font-size: 16px; margin: 10px 0; width: 100%; }
+    .result { margin-top: 20px; white-space: pre-wrap; background: #fff; padding: 10px; border-radius: 5px; }
+    .back-link { margin-top: 20px; display: block; text-align: center; }
+  </style>
+</head>
+<body>
+  <h2>WOS ギフトコード配布</h2>
+
+  <label>プレイヤーID（FID）:</label>
+  <input type="text" id="fid" placeholder="例: 50760935">
+
+  <label>ギフトコード:</label>
+  <input type="text" id="giftcode" placeholder="例: THANKYOU2024">
+
+  <button onclick="sendGiftCode()">送信</button>
+
+  <div class="result" id="result"></div>
+
+  <a href="index.html" class="back-link">← トップへ戻る</a>
+
+  <!-- CryptoJS for MD5 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+  <script>
+    function md5(str) {
+      return CryptoJS.MD5(str).toString();
+    }
+
+    async function sendGiftCode() {
+      const fid = document.getElementById('fid').value;
+      const giftcode = document.getElementById('giftcode').value;
+      const time = Date.now();
+      const secret = 'tB87#kPtkxqOS2';
+
+      if (!fid || !giftcode) {
+        document.getElementById('result').innerText = 'FIDとギフトコードを入力してください。';
+        return;
+      }
+
+      let form = `fid=${fid}&cdk=${giftcode}&time=${time}`;
+      const sign = md5(form + secret);
+      form = `sign=${sign}&${form}`;
+
+      const res = await fetch("https://wos-giftcode-api.centurygame.com/api/gift_code", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: form
+      });
+
+      const json = await res.json();
+      document.getElementById('result').innerText = JSON.stringify(json, null, 2);
+    }
+  </script>
+</body>
+</html>
