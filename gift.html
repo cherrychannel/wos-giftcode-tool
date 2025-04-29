@@ -1,10 +1,61 @@
-<h2>ギフトコード配布</h2>
-<form method="post" action="?action=gift">
-  <label for="fid">FID:</label>
-  <input type="text" name="fid" id="fid" required><br><br>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ギフトコードセンター</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      background: #f0f0f0;
+      padding: 20px;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      display: inline-block;
+    }
+    input {
+      padding: 10px;
+      font-size: 16px;
+      width: 200px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin-left: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>ギフトコードセンター</h1>
+    <input type="text" id="codeInput" placeholder="ギフトコードを入力">
+    <button onclick="submitCode()">送信</button>
+    <p id="result"></p>
+  </div>
 
-  <label for="giftcode">ギフトコード:</label>
-  <input type="text" name="giftcode" id="giftcode" required><br><br>
+  <script>
+    const validCodes = {
+      "GIFT100": "100ゴールド獲得！",
+      "HELLO2025": "限定スキンを獲得！",
+      "WELCOME": "新規特典を獲得！"
+    };
 
-  <input type="submit" value="送信">
-</form>
+    function submitCode() {
+      const input = document.getElementById('codeInput').value.trim().toUpperCase();
+      const result = document.getElementById('result');
+
+      if (validCodes[input]) {
+        result.textContent = validCodes[input];
+        result.style.color = "green";
+      } else {
+        result.textContent = "無効なコードです。";
+        result.style.color = "red";
+      }
+    }
+  </script>
+</body>
+</html>
