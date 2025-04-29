@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>ギフトコード一括送信</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    textarea, input { width: 100%; margin: 10px 0; padding: 8px; }
+    button { padding: 10px; width: 100%; background-color: #007bff; color: white; border: none; }
+    button:hover { background-color: #0056b3; }
+    .log { margin-top: 20px; white-space: pre-wrap; background: #f0f0f0; padding: 10px; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <h1>ギフトコード一括送信</h1>
+  <label>FIDリスト（カンマか改行で区切り）:</label>
+  <textarea id="fidInput" placeholder="例：123456,789012"></textarea>
+
+  <label>ギフトコード:</label>
+  <input type="text" id="giftCode" placeholder="例：WELCOME123" />
+
+  <button onclick="sendGifts()">ギフトを送信</button>
+
+  <div class="log" id="log"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/blueimp-md5/js/md5.min.js"></script>
+  <script>
+    async function sendGifts() {
+      const fids = document.getElementById("fidInput").value.split(/[\n,]+/).map(f => f.trim()).filter(f => f !== "");
+      const gift = document.getElementById("giftCode").value.trim();
+      const logEl = document.getElementById("log");
+      logEl.textContent = "";
+
+      if (fids.length === 0 || gift === "") {
+        alert("FIDとギフトコードを入力してください");
+        return;
+      }
+
+      let resultText = "";
+
+      for (const fid of fids) {
+        const time = Date.now();
+        const secret = "tB87#kPtkxqOS2"; // 固定されたsecret
+        const form = `fid=${fid}&gift_code=${gift}&time=${time}`;
+        const sign = md5(form + secret);
+        const fullForm = `sign=${sign}&` + form;
+
+        try {
+          const res = await fetch("https://wos-giftcode-api.centurygame.com/api/gift/receive", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: fullForm
+          });
+
+          const data = await res.json();
+          const status = data.code === 0 ? "成功" : `失敗 (${data.msg})`;
+
+          const line = `FID: ${fid} → ${status}`;
+          resultText += line + "\n";
+          logEl.textContent += line + "\n";
+        } catch (e) {
+          const err = `FID: ${fid} → 通信エラー`;
+          resultText += err + "\n";
+          logEl.textContent += err + "\n";
+        }
+      }
+
+      // ファイル保存（テキスト）
+      const blob = new Blob([resultText], { type: "text/plain" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "gift_results.txt";
+      link.click();
+    }
+  </script>
+</body>
+</html>
