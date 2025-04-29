@@ -2,39 +2,97 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>Whiteout Survival プレイヤーデータ取得</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/blueimp-md5/2.19.0/js/md5.min.js"></script>
+  <title>プレイヤーデータ取得</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      background-color: #f2f2f2;
+    }
+    h1 {
+      font-size: 1.5em;
+    }
+    .input-group {
+      margin-bottom: 1em;
+    }
+    input {
+      padding: 0.5em;
+      font-size: 1em;
+      width: 200px;
+    }
+    button {
+      padding: 0.5em 1em;
+      font-size: 1em;
+    }
+    .result {
+      background: white;
+      padding: 1em;
+      border-radius: 8px;
+      margin-top: 1em;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .images {
+      margin-top: 10px;
+    }
+    .images img {
+      height: 64px;
+      margin-right: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    pre {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+  </style>
 </head>
 <body>
-  <h2>プレイヤーデータ取得</h2>
-  <label>FID（ユーザーID）: <input type="text" id="fid" value="50760935"></label><br><br>
-  <button onclick="getPlayerData()">取得する</button>
+  <h1>プレイヤーデータ取得</h1>
+  <div class="input-group">
+    <label>FID（ユーザーID）：</label>
+    <input id="fid" type="text" value="50760935" />
+    <button onclick="fetchData()">取得する</button>
+  </div>
 
-  <pre id="result" style="margin-top:20px; background:#f4f4f4; padding:10px;"></pre>
+  <div class="result" id="result" style="display:none;">
+    <h2>取得結果</h2>
+    <div id="info"></div>
+    <div class="images" id="images"></div>
+    <pre id="json"></pre>
+  </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/blueimp-md5/js/md5.min.js"></script>
   <script>
-    function getPlayerData() {
+    async function fetchData() {
       const id = document.getElementById("fid").value;
-      const secret = 'tB87#kPtkxqOS2'; // 既知のシークレット
+      const secret = 'tB87#kPtkxqOS2';
       const time = Date.now();
-      let form = `fid=${id}&time=${time}`;
+      const form = `fid=${id}&time=${time}`;
       const sign = md5(form + secret);
-      form = `sign=${sign}&` + form;
+      const fullForm = `sign=${sign}&` + form;
 
-      fetch('https://wos-giftcode-api.centurygame.com/api/player', {
+      const res = await fetch('https://wos-giftcode-api.centurygame.com/api/player', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: form
-      })
-      .then(res => res.json())
-      .then(data => {
-        document.getElementById("result").textContent = JSON.stringify(data, null, 2);
-      })
-      .catch(err => {
-        document.getElementById("result").textContent = "エラー: " + err;
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: fullForm
       });
+      const data = await res.json();
+
+      if (data.code === 0) {
+        document.getElementById("result").style.display = "block";
+        document.getElementById("info").innerHTML = `
+          <strong>ニックネーム：</strong> ${data.data.nickname}<br>
+          <strong>Lv：</strong> ${data.data.stove_LV}<br>
+          <strong>KD：</strong> ${data.data.kid}<br>
+        `;
+        document.getElementById("images").innerHTML = `
+          <img src="${data.data.avatar_image}" alt="アバター画像" />
+          <img src="${data.data.stove_lv_content}" alt="レベルアイコン" />
+        `;
+        document.getElementById("json").textContent = JSON.stringify(data, null, 2);
+      } else {
+        alert("データ取得に失敗しました");
+      }
     }
   </script>
 </body>
