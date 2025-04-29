@@ -1,48 +1,63 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <script src="https://cdn.jsdelivr.net/npm/js-md5@0.7.3/src/md5.min.js"></script>
-  <meta charset="UTF-8">
-  <title>ギフトコード配布ページ</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ギフトコード送信</title>
   <style>
-    body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
-    input, button { padding: 10px; font-size: 16px; margin: 10px 0; width: 100%; }
-    .result { margin-top: 20px; white-space: pre-wrap; background: #fff; padding: 10px; border-radius: 5px; }
-    .back-link { margin-top: 20px; display: block; text-align: center; }
+    body {
+      font-family: sans-serif;
+      padding: 2em;
+      background-color: #f0f0f0;
+    }
+    input, button {
+      padding: 0.5em;
+      margin: 0.5em 0;
+      width: 100%;
+      font-size: 1em;
+    }
+    #result {
+      white-space: pre-wrap;
+      background: #fff;
+      padding: 1em;
+      margin-top: 1em;
+      border: 1px solid #ccc;
+    }
   </style>
+  <!-- MD5ライブラリ読み込み -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 </head>
 <body>
-  <nav style="margin-bottom: 16px;">
-    <a href="index.html">プレイヤーデータ</a> |
-    <a href="alliance.html">同盟データ</a>
-    <a href="gift.html">ギフトコード配布ページへ</a>
-  </nav>
-  <h2>WOS ギフトコード配布</h2>
+  <h1>ギフトコード送信テスト</h1>
 
-  <label>プレイヤーID（FID）:</label>
-  <input type="text" id="fid" placeholder="例: 50760935">
+  <label for="fid">FID（プレイヤーID）:</label>
+  <input type="text" id="fid" placeholder="例: 1234567890"/>
 
-  <label>ギフトコード:</label>
-  <input type="text" id="giftcode" placeholder="例: THANKYOU2024">
+  <label for="giftcode">ギフトコード:</label>
+  <input type="text" id="giftcode" placeholder="例: ABCD1234"/>
 
   <button onclick="sendGiftCode()">送信</button>
 
-  <div class="result" id="result"></div>
+  <div id="result"></div>
 
-  <a href="index.html" class="back-link">← トップへ戻る</a>
-
-  <!-- CryptoJS for MD5 -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
   <script>
     function md5(str) {
       return CryptoJS.MD5(str).toString();
     }
 
+    function generateSign(data, secret) {
+      const sortedKeys = Object.keys(data).sort();
+      const encoded = sortedKeys.map(key => {
+        const value = typeof data[key] === 'object' ? JSON.stringify(data[key]) : data[key];
+        return `${key}=${value}`;
+      }).join("&");
+      return md5(encoded + secret);
+    }
+
     async function sendGiftCode() {
-      const fid = document.getElementById('fid').value;
-      const giftcode = document.getElementById('giftcode').value;
-      const time = Date.now();
+      const fid = document.getElementById('fid').value.trim();
+      const giftcode = document.getElementById('giftcode').value.trim();
+      const time = Math.floor(Date.now() / 1000); // 秒単位のUNIXタイムスタンプ
       const secret = 'tB87#kPtkxqOS2';
 
       if (!fid || !giftcode) {
@@ -50,20 +65,29 @@
         return;
       }
 
-      let form = `fid=${fid}&cdk=${giftcode}&time=${time}`;
-      const sign = md5(form + secret);
-      form = `sign=${sign}&${form}`;
+      const data = {
+        fid: fid,
+        cdk: giftcode,
+        time: time
+      };
 
-      const res = await fetch("https://wos-giftcode-api.centurygame.com/api/gift_code", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded"
-        },
-        body: form
-      });
+      const sign = generateSign(data, secret);
+      const formData = new URLSearchParams({ ...data, sign });
 
-      const json = await res.json();
-      document.getElementById('result').innerText = JSON.stringify(json, null, 2);
+      try {
+        const res = await fetch("https://wos-giftcode-api.centurygame.com/api/gift_code", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+          },
+          body: formData.toString()
+        });
+
+        const json = await res.json();
+        document.getElementById('result').innerText = JSON.stringify(json, null, 2);
+      } catch (err) {
+        document.getElementById('result').innerText = '通信エラーが発生しました。';
+      }
     }
   </script>
 </body>
