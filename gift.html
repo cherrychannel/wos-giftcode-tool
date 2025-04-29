@@ -35,6 +35,7 @@
 </head>
 <body>
   <h1>ギフトコード送信テスト</h1>
+  
   <label for="fid">FID（プレイヤーID）：</label>
   <input type="text" id="fid" placeholder="例: 50760935" />
   
@@ -48,7 +49,7 @@
   <a href="index.html">← 戻る</a>
 
   <script>
-    const SECRET_KEY = "tB87#kPtkxqOS2";  // Pythonと同じキー
+    const SECRET_KEY = "tB87#kPtkxqOS2"; // Pythonと同じキー
 
     function encodeData(data) {
       const sortedKeys = Object.keys(data).sort();
@@ -63,25 +64,28 @@
       const timestamp = Math.floor(Date.now() / 1000);
 
       const baseData = {
-        fid,
+        fid: fid,
         cdk: giftcode,
         time: timestamp
       };
 
       const postData = encodeData(baseData);
-
       const formBody = new URLSearchParams(postData).toString();
 
-      const response = await fetch("https://wos-giftcode-api.centurygame.com/api/gift_code", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded"
-        },
-        body: formBody
-      });
+      try {
+        const response = await fetch("https://wos-giftcode-api.centurygame.com/api/gift_code", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+          },
+          body: formBody
+        });
 
-      const result = await response.json();
-      document.getElementById("result").textContent = JSON.stringify(result, null, 2);
+        const result = await response.json();
+        document.getElementById("result").textContent = JSON.stringify(result, null, 2);
+      } catch (error) {
+        document.getElementById("result").textContent = "通信エラー: " + error;
+      }
     }
   </script>
 </body>
